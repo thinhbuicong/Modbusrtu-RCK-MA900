@@ -1,0 +1,110 @@
+Symbol          |  Address    |  Comment
+Always_On          SM0.0         Always_ON
+MBUS_CTRL          SBR1
+MBUS_MSG           SBR2
+First_Scan_On      SM0.1         ON for the first scan cycle only
+-----------------------------------------------------------------
+#network1
+// Initialize and monitor the Modbus master by calling MBUS_CTRL on every scan.
+// The Modbus master is set for 19200 baud and no parity. The slave device is allowed 250 milliseconds (1 second) to respond.
+LD     Always_On
+=      L60.0
+LD     Always_On
+=      L63.7
+LD     L60.0
+CALL   MBUS_CTRL, L63.7, 19200, 0, +250, M0.0, VB10
+-----------------------------------------------------------------
+#network2
+// On the frirst scan, reset the enable flags (M8.0) used for the one MBSUS_MSG instructions.
+LD     First_Scan_On
+S      M8.0, 1
+-----------------------------------------------------------------
+#network3
+LD     M8.0
+O      M8.1
+TON    T98, +10
+-----------------------------------------------------------------
+#network4
+// When T98 changes from OFF to ON, set the enable flag for the first MBUS_MSG instruction (M1.0).
+// Reset the enable flags (M8.0 and M8.1)
+LD     T98
+EU
+S      M1.0, 1
+R      M8.0, 2
+-----------------------------------------------------------------
+#network5 Measured value (PV)
+// Call the MBUS_MSG instruction when the first enable flag (M1.0) is ON.
+// The First parameter must be set for only the first scan that the instruction is enabled.
+// The istruction reads (RW = 0) 8 holding registers from slave 1. 
+// The data is read from address 40001 - 40008 in the Modbus slave and copied to VB100 - VB215 (8 words) in the CPU.
+// With RKC MA900 map, CH1 = 0000H = 0 => 40001 + 0 = 40001. CH2 = 0001H; CH3 = 0002H; CH4 = 0003H.
+LD     M1.0
+=      L60.0
+LD     M1.0
+EU
+=      L63.7
+LD     L60.0
+CALL   MBUS_MSG, L63.7, 1, 0, 40001, +8, &VB100, M0.1, VB11
+-----------------------------------------------------------------
+#network6
+LD     M0.1
+S      M1.1, 1
+R      M1.0, 1
+-----------------------------------------------------------------
+#network7 Set Value (SV)
+// Call the MBUS_MSG instruction when the first enable flag (M1.1) is ON.
+// The First parameter must be set for only the first scan that the instruction is enabled.
+// The istruction writes (RW = 1) 8 holding registers to slave 1. 
+// The write data is taken from VB120 - VB135 (8 words) in the CPU and written to address 40201 - 40008 in the Modbus slave.
+// With RKC MA900 map, CH1 = 00C8H = 0 => 40001 + 200 = 40201. CH2 = 00C9H; CH3 = 00CAH; CH4 = 00CBH.
+LD     M1.1
+=      L60.0
+LD     M1.1
+EU
+=      L63.7
+LD     L60.0
+CALL   MBUS_MSG, L63.7, 1, 1, 40201, +8, &VB120, M0.2, VB12
+-----------------------------------------------------------------
+#network8
+LD     M0.2
+R      M1.1, 1
+S      M1.2, 1
+-----------------------------------------------------------------
+#network9 Used / unused of channels
+// Call the MBUS_MSG instruction when the first enable flag (M1.2) is ON.
+// The First parameter must be set for only the first scan that the instruction is enabled.
+// The istruction writes (RW = 1) 8 holding registers to slave 1. 
+// The write data is taken from VB154 - VB169 (8 words) in the CPU and written to address 40441 - 40455 in the Modbus slave.
+// With RKC MA900 map, CH1 = 01B8H = 0 => 40001 + 400 = 40401. CH2 = 01B9H; CH3 = 01BAH; CH4 = 01BBH.
+LD     M1.2
+=      L60.0
+LD     M1.2
+EU
+=      L63.7
+LD     L60.0
+CALL   MBUS_MSG, L63.7, 1, 1, 40441, +8, &VB154, M0.3, VB13
+-----------------------------------------------------------------
+#network10
+LD     M0.3
+R      M1.2, 1
+S      M1.3, 1
+-----------------------------------------------------------------
+#network11 Manipulated output value
+// Call the MBUS_MSG instruction when the first enable flag (M1.3) is ON.
+// The First parameter must be set for only the first scan that the instruction is enabled.
+// The istruction reads (RW = 0) 8 holding registers from slave 1. 
+// The data is read from address 40021 - 40035 in the Modbus slave and copied to VB180 - VB195 (8 words) in the CPU.
+// With RKC MA900 map, CH1 = 0014H = 0 => 40001 + 20 = 40021. CH2 = 0015H; CH3 = 0016H; CH4 = 0017H.
+LD     M1.3
+=      L60.0
+LD     M1.3
+EU
+=      L63.7
+LD     L60.0
+CALL   MBUS_MSG, L63.7, 1, 0, 40021, +8, &VB180, M0.4, VB14
+-----------------------------------------------------------------
+#network12
+LD     M0.4
+R      M1.3, 1
+EU
+S      M8.1, 1
